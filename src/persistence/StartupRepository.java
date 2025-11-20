@@ -75,4 +75,28 @@ public class StartupRepository {
         }
         return null;
     }
+/**
+     * Atualiza os dados de uma startup existente no banco.
+     * @param id O UUID da startup.
+     * @param startup O objeto com os dados atualizados.
+     */
+    public void atualizar(String id, Startup startup) {
+        String sql = "UPDATE startup SET caixa=?, receita_base=?, reputacao=?, moral=?, rodada_atual=? WHERE id=?";
+
+        try (Connection conn = DataSourceProvider.get();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setDouble(1, startup.getCaixa().valor());
+            stmt.setDouble(2, startup.getReceitaBase().valor());
+            stmt.setInt(3, startup.getReputacao().valor());
+            stmt.setInt(4, startup.getMoral().valor());
+            stmt.setInt(5, startup.getRodadaAtual());
+            stmt.setString(6, id);
+
+            stmt.executeUpdate();
+
+        } catch (SQLException e) {
+            throw new RuntimeException("Erro ao atualizar Startup", e);
+        }
+    }
 }
