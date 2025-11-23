@@ -35,8 +35,8 @@ public class Startup {
     }
 
     public void clamparHumor() {
-        reputacao = reputacao; // VO já valida limites na criação
-        moral = moral;
+        this.reputacao = reputacao; // VO já valida limites na criação
+        this.moral = moral;
     }
 
     public double scoreFinal() {
