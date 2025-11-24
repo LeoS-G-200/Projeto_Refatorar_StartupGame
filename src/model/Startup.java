@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
+
 public class Startup {
     private String nome;
     private Dinheiro caixa;
@@ -34,10 +35,7 @@ public class Startup {
         return receita;
     }
 
-    public void clamparHumor() {
-        this.reputacao = reputacao; // VO já valida limites na criação
-        this.moral = moral;
-    }
+ 
 
     public double scoreFinal() {
         return reputacao.valor() * 0.35

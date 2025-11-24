@@ -43,6 +43,9 @@ public class ConsoleApp {
         System.out.print("\nDigite o nome da sua Startup: ");
         String nome = scanner.nextLine();
         
+        engine.addObserver(new observers.EventLoggerObserver());
+        engine.addObserver(new observers.MatchStatsObserver());
+
         // Inicializa a engine
         engine.iniciarNovoJogo(nome);
         

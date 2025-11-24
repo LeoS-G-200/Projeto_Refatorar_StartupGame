@@ -15,101 +15,122 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class GameEngine {
+    // ... atributos existentes ...
     private final Config config;
     private Startup startup;
-    private String startupId; // ID do banco de dados
+    private String startupId;
     private boolean gameOver = false;
     private String statusMessage = "";
 
-    // Repositories
+    // Repositories existentes...
     private final StartupRepository startupRepo = new StartupRepository();
     private final RodadaRepository rodadaRepo = new RodadaRepository();
     private final DecisaoAplicadaRepository decisaoRepo = new DecisaoAplicadaRepository();
+
+    // === NOVO: Lista de Observadores ===
+    private final List<GameObserver> observers = new ArrayList<>();
 
     public GameEngine() {
         this.config = new Config();
     }
 
-    /**
-     * Inicia um novo jogo criando uma Startup do zero.
-     */
-    public void iniciarNovoJogo(String nomeEmpresa) {
-        // Valores iniciais padrão
-        this.startup = new Startup(
-            nomeEmpresa,
-            new Dinheiro(10000), // R$ 10k iniciais
-            new Dinheiro(5000),  // R$ 5k receita base
-            new Humor(50),       // 50% Reputação
-            new Humor(50)        // 50% Moral
-        );
-        
-        // Salva no banco e recupera o ID gerado
-        this.startupId = startupRepo.salvar(this.startup);
-        this.gameOver = false;
+    // === NOVO: Método para adicionar observadores ===
+    public void addObserver(GameObserver observer) {
+        this.observers.add(observer);
     }
 
-    /**
-     * Processa uma rodada completa com base nas decisões do jogador.
-     * @param nomesDecisoes Lista de strings (ex: "MARKETING", "EQUIPE")
-     */
+    public void iniciarNovoJogo(String nomeEmpresa) {
+        // ... (código existente de criação da startup) ...
+        this.startup = new Startup(
+            nomeEmpresa,
+            new Dinheiro(10000), 
+            new Dinheiro(5000),  
+            new Humor(50),       
+            new Humor(50)        
+        );
+        this.startupId = startupRepo.salvar(this.startup);
+        this.gameOver = false;
+
+        // === NOVO: Notificar início ===
+        notificarInicioJogo();
+    }
+
     public void processarRodada(List<String> nomesDecisoes) {
         if (gameOver) return;
 
-        // 1. Validação
+        // ... (validações existentes) ...
         if (nomesDecisoes.size() > config.maxDecisoesPorRodada()) {
             throw new IllegalArgumentException("Muitas decisões! Máximo permitido: " + config.maxDecisoesPorRodada());
         }
 
         int rodadaAtual = startup.getRodadaAtual();
-
-        // 2. Registrar a Rodada no Banco
         long rodadaId = rodadaRepo.registrarRodada(startupId, rodadaAtual);
-
-        // 3. Aplicar Decisões (Strategy Pattern)
         List<String> logRodada = new ArrayList<>();
-        
+
+        // ... (loop de decisões existente) ...
         for (String nomeDecisao : nomesDecisoes) {
             try {
-                // Factory cria a estratégia correta
                 DecisaoStrategy strategy = DecisaoFactory.criar(nomeDecisao);
-                
-                // Aplica e recebe os Deltas (mudanças)
                 Deltas d = strategy.aplicar(startup);
-                
-                // Atualiza o Modelo (Startup)
                 aplicarDeltas(d);
-
-                // Persistência e Log
                 decisaoRepo.salvar(rodadaId, nomeDecisao);
                 logRodada.add(String.format("[%s] %s", nomeDecisao, formatarDeltas(d)));
-
             } catch (IllegalArgumentException e) {
-                // Se faltar dinheiro (Dinheiro VO joga exceção se negativo)
                 statusMessage = "ERRO: " + e.getMessage();
                 gameOver = true;
+                // === NOVO: Notificar Game Over por erro ===
+                notificarFimDeJogo("Falência/Erro: " + e.getMessage());
                 return;
             }
         }
 
-        // 4. Finalizar Rodada (Receita + Updates)
-        double receitaEntrada = startup.receitaRodada(); // Já aplica bônus e reseta percentual
+        // ... (finalização de rodada existente) ...
+        double receitaEntrada = startup.receitaRodada();
         startup.setCaixa(startup.getCaixa().somar(new Dinheiro(receitaEntrada)));
         
         logRodada.add(String.format("Faturamento da rodada: R$ %.2f", receitaEntrada));
-        
-        // Atualiza histórico interno da classe Startup
         logRodada.forEach(startup::registrar);
+        
+        // === NOVO: Notificar fim da rodada ANTES de incrementar ===
+        // Passamos uma cópia da lista de decisões para o observer saber o que houve
+        notificarRodadaFinalizada(rodadaAtual, receitaEntrada, new ArrayList<>(nomesDecisoes));
 
         // Prepara próxima rodada
         startup.setRodadaAtual(rodadaAtual + 1);
-        
-        // 5. Salvar Estado Atualizado no Banco
         startupRepo.atualizar(startupId, startup);
 
-        // 6. Checar Fim de Jogo
         verificarFimDeJogo();
     }
 
+    private void verificarFimDeJogo() {
+        if (startup.getRodadaAtual() > config.totalRodadas()) {
+            gameOver = true;
+            statusMessage = "Fim de jogo! Rodadas finalizadas.";
+            // === NOVO: Notificar Fim de Jogo ===
+            notificarFimDeJogo("Rodadas finalizadas com sucesso!");
+        }
+    }
+
+    // === NOVOS: Métodos auxiliares de notificação ===
+    private void notificarInicioJogo() {
+        for (GameObserver obs : observers) {
+            obs.onJogoIniciado(startup);
+        }
+    }
+
+    private void notificarRodadaFinalizada(int rodada, double faturamento, List<String> decisoes) {
+        for (GameObserver obs : observers) {
+            obs.onRodadaFinalizada(rodada, startup, faturamento, decisoes);
+        }
+    }
+
+    private void notificarFimDeJogo(String motivo) {
+        for (GameObserver obs : observers) {
+            obs.onFimDeJogo(startup, motivo);
+        }
+    }
+
+    // ... (restante dos métodos privados e getters existentes: aplicarDeltas, etc) ...
     private void aplicarDeltas(Deltas d) {
         // Atualiza Caixa (pode lançar exceção se ficar negativo)
         double novoCaixa = startup.getCaixa().valor() + d.caixaDelta();
@@ -126,21 +147,12 @@ public class GameEngine {
         startup.addBonusPercentReceitaProx(d.bonusDelta());
     }
 
-    private void verificarFimDeJogo() {
-        if (startup.getRodadaAtual() > config.totalRodadas()) {
-            gameOver = true;
-            statusMessage = "Fim de jogo! Rodadas finalizadas.";
-        }
-    }
-    
     private String formatarDeltas(Deltas d) {
         return String.format("Caixa: %+.0f, Rep: %+d, Moral: %+d", 
                 d.caixaDelta(), d.reputacaoDelta(), d.moralDelta());
     }
 
-    // Getters para a UI
     public Startup getStartup() { return startup; }
     public boolean isGameOver() { return gameOver; }
     public String getStatusMessage() { return statusMessage; }
-    public int getMaxDecisoes() { return config.maxDecisoesPorRodada(); }
 }
