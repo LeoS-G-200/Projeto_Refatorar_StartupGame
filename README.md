@@ -46,17 +46,6 @@ Para rodar este projeto, você precisará de:
 
 ---
 
-## ▶️ Como Rodar o Projeto
-
-Abra o terminal na **raiz do projeto** (a pasta que contém `src`, `resources` e `lib`) e execute os comandos abaixo conforme seu sistema operacional.
-
-### Windows (PowerShell ou CMD)
-
-
-
----
-
----
 
 ## Pré-requisitos (Biblioteca)
 Para executar o projeto, é necessário adicionar o driver do banco de dados:
