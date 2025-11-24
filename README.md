@@ -1,57 +1,86 @@
-# Starter — Refatoração Startup Game (POO Avançado)
+# Startup Game - Refatoração POO Avançado
 
-## Sobre o Projeto
-Este é o **starter** do projeto de refatoração do Startup Game.  
-Ele fornece a estrutura mínima com pacotes, classes *stub* e classes VO prontas para uso.  
-Os alunos devem completar o projeto conforme o **Enunciado_Projeto.md**.
+## 📝 Sobre o Projeto
+Este projeto consiste na refatoração completa de um jogo de simulação de startup, aplicando princípios avançados de **Programação Orientada a Objetos (POO)** e **Padrões de Projeto**.
 
-⚠️ **Versionamento no Git**:  
-O projeto deve ser versionado em um repositório Git. O professor será incluído como colaborador para verificar commits.  
-**A frequência, autoria e qualidade dos commits serão avaliadas** como parte da nota.
+O objetivo foi transformar um código monolítico em uma arquitetura em camadas, testável e extensível, utilizando Java puro e banco de dados H2.
+
+### 🚀 Funcionalidades do Jogo
+* **Simulação de Turnos:** O jogador gerencia uma startup ao longo de 8 rodadas.
+* **Tomada de Decisões:** Escolha entre Marketing, Equipe, Produto, Investidores, etc.
+* **Gestão de Recursos:** Controle de Caixa, Reputação e Moral.
+* **Persistência Automática:** Todo o progresso é salvo automaticamente em banco de dados (H2).
+* **Relatórios (Nova Feature):** Exportação automática de histórico da partida para CSV ao final do jogo.
 
 ---
 
-## Estrutura do Projeto
-```
-src/
-  config/Config.java
-  model/Startup.java
-  model/Deltas.java
-  model/vo/Dinheiro.java
-  model/vo/Percentual.java
-  model/vo/Humor.java
-  actions/DecisaoStrategy.java
-  actions/DecisaoFactory.java
-  actions/[estratégias].java
-  persistence/DataSourceProvider.java
-  persistence/[repositories].java
-  engine/GameEngine.java
-  engine/ScoreService.java
-  ui/ConsoleApp.java
-  Main.java
-resources/
-  game.properties (total.rodadas=8 e max.decisoes.por.rodada=3)
-  schema.sql
-```
+## 🛠️ Arquitetura e Padrões Implementados
+
+### 1. Arquitetura em Camadas
+O código foi organizado para separar responsabilidades (SRP):
+* **`model`**: Regras de negócio e Value Objects (`Dinheiro`, `Humor`, `Percentual`).
+* **`actions`**: Lógica das decisões (Pattern Strategy).
+* **`persistence`**: Acesso a dados (DAO/Repository) e inicialização do banco.
+* **`engine`**: Motor do jogo e gerenciamento de estado (`GameEngine`).
+* **`ui`**: Interface de console (`ConsoleApp`).
+* **`observers`**: Monitoramento de eventos e logs.
+* **`config`**: Leitura de configurações externas (`game.properties`).
+
+### 2. Padrões de Projeto (Design Patterns)
+* **Strategy:** Utilizado para implementar as diferentes decisões (`MarketingStrategy`, `EquipeStrategy`, etc.), permitindo adicionar novas opções sem alterar a engine.
+* **Observer:** Utilizado para desacoplar a interface da lógica de logs e relatórios (`GameObserver`, `MatchStatsObserver`).
+* **Factory:** Criação dinâmica das estratégias de decisão (`DecisaoFactory`).
+* **Singleton/Static:** Gerenciamento único da conexão com o banco de dados (`DataSourceProvider`).
+
+---
+
+## ⚙️ Pré-requisitos e Configuração
+Para rodar este projeto, você precisará de:
+1. **Java JDK** (Versão 17 ou superior recomendada).
+2. **Driver do Banco H2**.
+
+### 📥 Instalação da Dependência (H2)
+1. Crie uma pasta chamada `lib` na raiz do projeto (no mesmo nível de `src`).
+2. Baixe o arquivo `.jar` do banco de dados H2 (ex: do site oficial ou repositório Maven).
+3. **Importante:** Renomeie o arquivo baixado para **`h2.jar`** e coloque-o dentro da pasta `lib`.
+
+---
+
+## ▶️ Como Rodar o Projeto
+
+Abra o terminal na **raiz do projeto** (a pasta que contém `src`, `resources` e `lib`) e execute os comandos abaixo conforme seu sistema operacional.
+
+### Windows (PowerShell ou CMD)
+
+
+
+---
+
+---
+
+## Pré-requisitos (Biblioteca)
+Para executar o projeto, é necessário adicionar o driver do banco de dados:
+1. Crie uma pasta chamada `lib` na raiz do projeto.
+2. Baixe o arquivo `.jar` do H2 Database e renomeie-o para **`h2.jar`**.
+3. Coloque o arquivo em `lib/h2.jar`.
 
 ---
 
 ## Como Rodar (console)
-Compile e execute o `Main` **incluindo `resources` no classpath**:
+Compile e execute o `Main` **incluindo `resources` e `lib` no classpath**:
 
 ```bash
 # Compilar (Linux/Mac)
 javac -d out $(find src -name "*.java")
 
-# Compilar (Windows PowerShell - exemplo)
+# Compilar (Windows PowerShell)
 javac -d out (Get-ChildItem -Recurse -Filter *.java | ForEach-Object { $_.FullName })
 
 # Executar (Linux/Mac)
-java -cp out:resources Main
+java -cp out:resources:lib/h2.jar Main
 
 # Executar (Windows PowerShell)
-java -cp "out;resources" Main
-```
+java -cp "out;resources;lib/h2.jar" Main
 
 ---
 
@@ -67,9 +96,3 @@ O arquivo `resources/game.properties` já vem configurado com:
 - Execute o SQL de `resources/schema.sql` na inicialização para criar as tabelas necessárias.
 
 ---
-
-## Entregáveis
-- Código-fonte completo no **Git** + link do repositório para o professor.
-- `schema.sql` completo com tabelas do H2.
-- `README.md` e `RELATORIO.md` com instruções, evidências e resultados.
-- Commits frequentes e autoria verificada no Git.
